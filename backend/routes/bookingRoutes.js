@@ -12,6 +12,22 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET
 });
 
+// Gmail transporter for Render
+const createEmailTransporter = () => {
+  return nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    },
+    connectionTimeout: 60000,
+    greetingTimeout: 60000,
+    socketTimeout: 60000
+  });
+};
+
 // Create Razorpay Order
 router.post("/create-order", async (req, res) => {
   try {
@@ -84,13 +100,10 @@ router.post("/verify-payment", async (req, res) => {
         process.env.ADMIN_EMAIL &&
         process.env.EMAIL_USER !== "your_email@gmail.com"
       ) {
-        const transporter = nodemailer.createTransport({
-          service: "gmail",
-          auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS
-          }
-        });
+        const transporter = createEmailTransporter();
+
+        await transporter.verify();
+        console.log("Email transporter verified successfully");
 
         await transporter.sendMail({
           from: process.env.EMAIL_USER,
@@ -141,7 +154,7 @@ router.post("/verify-payment", async (req, res) => {
           `
         });
 
-        console.log("Email sent successfully");
+        console.log("Booking emails sent successfully");
       } else {
         console.log("Email skipped: email credentials not configured");
       }
